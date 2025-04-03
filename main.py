@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
+channel_botlog = int(os.getenv("channel_botlog"))
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 tree = bot.tree
@@ -43,8 +44,8 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
             description = f"Invoke error\n```py\n{error_data[:1000]}\n```"
     elif isinstance(error, commands.CommandOnCooldown):
         description = f"This command is on cooldown. You need to wait {error.retry_after:.2f} to use that command"
-    elif isinstance(error, AuthorHasLowerRole):
-        description = "You can't manage this member because he has a better role than yours"
+    #elif isinstance(error, AuthorHasLowerRole):
+    #    description = "You can't manage this member because he has a better role than yours"
     elif isinstance(error, commands.BotMissingPermissions):
         description = f"I am missing required permissions to do that"
         embed.add_field(name="List of permissions", value=', '.join(error.missing_permissions))
@@ -70,13 +71,14 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
         color=discord.Color.red(),
         timestamp=datetime.datetime.utcnow()
     )
-    channel = await bot.fetch_channel(1349718097275129947)
+    channel = await bot.fetch_channel(channel_botlog)
     await channel.send(embed=embed)
 
 @bot.event
-async def setup_hook():
+async def setup_hook() -> None:
     print("Running setup hook...")
     await bot.load_extension("cogs.purge")
+    await bot.load_extension("cogs.serverstatus")
 
 @bot.event
 async def on_ready() -> None:
