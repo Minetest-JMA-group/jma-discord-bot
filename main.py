@@ -10,6 +10,7 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 channel_botlog = int(os.getenv("channel_botlog"))
+server_sync = int(os.getenv("server_sync"))
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 tree = bot.tree
@@ -77,14 +78,16 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
 @bot.event
 async def setup_hook() -> None:
     print("Running setup hook...")
+    await bot.load_extension("cogs.debug")
     await bot.load_extension("cogs.purge")
     await bot.load_extension("cogs.serverstatus")
+    await bot.load_extension("cogs.dmuser")
 
 @bot.event
 async def on_ready() -> None:
     print(f"Logged in as {bot.user}")
 
-    guild = discord.Object(id=1349712783989800992)
+    guild = discord.Object(id=server_sync)
     tree.copy_global_to(guild=guild)
     synced = await tree.sync(guild=guild)
 
