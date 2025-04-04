@@ -11,23 +11,51 @@ load_dotenv()
 TOKEN = os.getenv("TOKEN")
 channel_botlog = int(os.getenv("channel_botlog"))
 server_sync = int(os.getenv("server_sync"))
+role_botmanager = int(os.getenv("role_botmanager"))
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 tree = bot.tree
 
+cogs = [
+    "cogs.debug",
+    "cogs.purge",
+    "cogs.serverstatus",
+    "cogs.dmuser",
+    "cogs.onewordstory"
+]
+
 @bot.hybrid_command()
-async def echo(ctx: commands.Context, message: str):
+async def say(ctx: commands.Context, message: str):
     """
-    Echoes a message
+    Says a message.
 
     Parameters
     ----------
     ctx: commands.Context
         The context of the command invocation
     message: str
-        The message to echo
+        The message to say
     """
     await ctx.send(message)
+
+@bot.hybrid_command()
+async def reload(ctx: commands.Context):
+    """
+    Reload all cogs.
+
+    Parameters
+    ----------
+    ctx: commands.Context
+        The context of the command invocation
+    """
+    if not discord.utils.get(ctx.author.roles, id=role_botmanager):
+        await ctx.send(":notes: Never gonna give you up, never gonna let you down... :notes:", delete_after=2)
+    else:
+        total = 0
+        for c in cogs:
+            await bot.reload_extension(c)
+            total = total + 1
+        await ctx.send(f"Reloaded {total} extensions")
 
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError):
@@ -78,10 +106,8 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
 @bot.event
 async def setup_hook() -> None:
     print("Running setup hook...")
-    await bot.load_extension("cogs.debug")
-    await bot.load_extension("cogs.purge")
-    await bot.load_extension("cogs.serverstatus")
-    await bot.load_extension("cogs.dmuser")
+    for c in cogs:
+        await bot.load_extension(c)
 
 @bot.event
 async def on_ready() -> None:

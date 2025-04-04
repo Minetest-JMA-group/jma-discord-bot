@@ -8,15 +8,15 @@ load_dotenv()
 
 role_botmanager = int(os.getenv("role_botmanager"))
 
-class DebugCog(commands.Cog):
+class OneWordStoryCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     async def cog_load(bot):
-        print("[DebugCog] Loaded!")
+        print("[OneWordStoryCog] Loaded!")
 
     async def cog_unload(bot):
-        print("[DebugCog] Unloaded")
+        print("[OneWordStoryCog] Unloaded")
     
     @commands.hybrid_command()
     async def list_roles(self, ctx):
@@ -28,8 +28,8 @@ class DebugCog(commands.Cog):
         ctx: commands.Context
             The context of the command invocation
         """
-        if not discord.utils.get(ctx.author.roles, id=role_botmanager):
-            await ctx.send("You're not allowed to use debug commands!\nIn fact, I'll give you even more bugs now :bug::bug::bug:", delete_after=5)
+        if ctx.channel.id != allowed_channel_id:
+            await ctx.send("You're not allowed to use debug commands!\nIn fact, I'll give you even more bugs now :bug::bug::bug:")
         else:
             roles = ctx.guild.roles  # Get all roles in the server
             role_list = "\n".join([f"{role.name} - `{role.id}`" for role in roles])  # Format the roles
@@ -39,4 +39,4 @@ class DebugCog(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(DebugCog(bot))
+    await bot.add_cog(OneWordStoryCog(bot))

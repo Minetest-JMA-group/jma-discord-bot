@@ -42,9 +42,9 @@ class DmUserCog(commands.Cog):
         has_role = any(role.id in allowed_roles for role in ctx.author.roles)
 
         if not has_role:
-            await ctx.send("Nope! You don't have the roles to use this command.", delete_after=2)
+            await ctx.send("Nope! You don't have the roles to use this command.", delete_after=5)
         elif (not user.id) or (not message):
-            await ctx.send("I didn't recieve the user or message correctly. Try using the slash command.", delete_after=2)
+            await ctx.send("I didn't recieve the user or message correctly. Try using the slash command.", delete_after=5)
         else:
             status = discord.Embed(
                 title="Sending DM...",

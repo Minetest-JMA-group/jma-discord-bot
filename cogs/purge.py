@@ -57,16 +57,20 @@ class PurgeCog(commands.Cog):
         message_id: int
             The ID of the message after which to delete all messages
         """
+        if not ctx.author.guild_permissions.manage_messages:
+            await ctx.send("Ermm... you do not have permission to manage messages!", delete_after=5)
+            return
+        
         try:
             message = await ctx.channel.fetch_message(message_id)
         except discord.NotFound:
-            await ctx.send("Message not found. Please provide a valid message ID.")
+            await ctx.send("Message not found. Please provide a valid message ID.", delete_after=5)
             return
         except discord.Forbidden:
-            await ctx.send("I don't have permission to fetch messages in this channel.")
+            await ctx.send("I don't have permission to fetch messages in this channel.", delete_after=5)
             return
         except discord.HTTPException:
-            await ctx.send("An error occurred while fetching the message.")
+            await ctx.send("An error occurred while fetching the message.", delete_after=5)
             return
 
         view = PurgeConfirmView(ctx, message)

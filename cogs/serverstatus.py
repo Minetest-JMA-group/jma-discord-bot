@@ -137,7 +137,6 @@ class ServerStatusCog(commands.Cog):
 
     
     @commands.hybrid_command()
-    @commands.has_role(role_botmanager)
     async def server_status_menu(self, ctx: commands.Context):
         """
         Sends a server status menu to the channel.
@@ -147,6 +146,10 @@ class ServerStatusCog(commands.Cog):
         ctx: commands.Context
             The context of the command invocation
         """
+        has_role = any(role.id == role_botmanager for role in interaction.user.roles)
+        if not has_role:
+            await ctx.send("Hey, you don't have permissions to do that!", delete_after=5)
+            return
 
         embed = discord.Embed(
             description=f"""- <@&{role_status_ctf}>
