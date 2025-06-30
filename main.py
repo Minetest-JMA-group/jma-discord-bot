@@ -25,9 +25,9 @@ cogs = [
     "cogs.status"
 ]
 
-@bot.hybrid_command()
+"""@bot.hybrid_command()
 async def say(ctx: commands.Context, message: str):
-    """
+    \"""
     Says a message.
 
     Parameters
@@ -36,8 +36,9 @@ async def say(ctx: commands.Context, message: str):
         The context of the command invocation
     message: str
         The message to say
-    """
+    \"""
     await ctx.send(message)
+"""
 
 @bot.hybrid_command()
 async def reload(ctx: commands.Context):
