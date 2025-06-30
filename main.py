@@ -21,7 +21,8 @@ cogs = [
     "cogs.purge",
     "cogs.serverstatus",
     "cogs.dmuser",
-    "cogs.onewordstory"
+    "cogs.onewordstory",
+    "cogs.status"
 ]
 
 @bot.hybrid_command()
@@ -98,7 +99,7 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
         title=f"Error in command {ctx.command}!",
         description=description,
         color=discord.Color.red(),
-        timestamp=datetime.datetime.utcnow()
+        timestamp=datetime.datetime.now(datetime.UTC)
     )
     channel = await bot.fetch_channel(channel_botlog)
     await channel.send(embed=embed)
