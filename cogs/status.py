@@ -39,16 +39,16 @@ class StatusCog(commands.Cog):
             await ctx.send("Hey, you don't have permissions to do that!", delete_after=5)
             return
 
-        if activity_type == "playing":
+        if activity_type.lower() == "playing":
             await self.bot.change_presence(activity=discord.Game(name=activity_name))
-        elif activity_type == "listening":
+        elif activity_type.lower() == "listening":
             await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=activity_name))
-        elif activity_type == "watching":
+        elif activity_type.lower() == "watching":
             await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=activity_name))
         else:
             await ctx.send("Invalid activity type!")
             return
-        await ctx.send(f"Status set to {activity_type} {activity_name}")
+        await ctx.send(f"Status set to **{activity_type.lower()} {activity_name}**")
 
 async def setup(bot):
     await bot.add_cog(StatusCog(bot))
