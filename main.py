@@ -22,7 +22,8 @@ cogs = [
     "cogs.serverstatus",
     "cogs.dmuser",
     "cogs.onewordstory",
-    "cogs.status"
+    "cogs.status",
+    "cogs.pingreact"
 ]
 
 """@bot.hybrid_command()
