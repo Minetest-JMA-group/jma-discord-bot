@@ -23,7 +23,8 @@ cogs = [
     "cogs.dmuser",
     "cogs.onewordstory",
     "cogs.status",
-    "cogs.pingreact"
+    "cogs.pingreact",
+    "cogs.suggestions",
 ]
 
 """@bot.hybrid_command()
