@@ -75,7 +75,7 @@ class OneWordStoryCog(commands.Cog):
                 )
                 await story_channel.send(embed=final_embed)
 
-                # Restart a new game
+                # Restart a new story
                 self.last_author_id = None
                 self.word_count = 0
                 self.story_ended = False
