@@ -102,27 +102,26 @@ class OneWordStoryCog(commands.Cog):
         else:
             await self.story_message.edit(embed=embed)
 
-    @commands.hybrid_command()
-    async def onewordstory_reset(self, ctx):
-        """
-        Reset the One Word Story
-
-        Parameters
-        ----------
-        ctx: commands.Context
-            The context of the command invocation
-        """
-        if not discord.utils.get(ctx.author.roles, id=role_onewordmanager):
-            return await ctx.send("🚫 You don't have permission!", delete_after=5)
-
-        self.last_author_id = None
-        self.word_count = 0
-        self.story_ended = False
-        self.story_message = None
-        self.story_content = []
-
-        await ctx.send("✅ One Word Story has been reset!", delete_after=5)
-
+    #@commands.hybrid_command()
+    #async def onewordstory_reset(self, ctx):
+    #    """
+    #   Reset the One Word Story
+    #
+    #    Parameters
+    #    ----------
+    #    ctx: commands.Context
+    #        The context of the command invocation
+    #    """
+    #    if not discord.utils.get(ctx.author.roles, id=role_onewordmanager):
+    #        return await ctx.send("🚫 You don't have permission!", delete_after=5)
+    #
+    #    self.last_author_id = None
+    #    self.word_count = 0
+    #    self.story_ended = False
+    #    self.story_message = None
+    #    self.story_content = []
+    #
+    #    await ctx.send("✅ One Word Story has been reset!", delete_after=5)
 
 async def setup(bot):
     await bot.add_cog(OneWordStoryCog(bot))
