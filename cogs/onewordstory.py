@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-
+import re
 import os
 from dotenv import load_dotenv
 
@@ -10,63 +10,118 @@ role_onewordmanager = int(os.getenv("role_onewordmanager"))
 channel_onewordstory = int(os.getenv("channel_onewordstory"))
 channel_onewordstorylog = int(os.getenv("channel_onewordstorylog"))
 
-class OneWordStoryEditModal(discord.ui.Modal, title="Edit the story"):
-    def __init__(self, story: str = ""):
-        super().__init__()
-
-        self.newstory = discord.ui.TextInput(
-            label="Content",
-            style=discord.TextStyle.long,
-            placeholder="You should probably close the form without saving now that you've deleted everything...",
-            default=story,  # Pre-filling the feedback field
-            required=False,
-            max_length=9999,
-        )
-        self.add_item(self.newstory)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        async for message in self.bot.fetch_channel(channel_onewordstorylog).history(limit=1):
-            if message.author == bot.user:
-                await message.edit(content=self.newstory.value)
-                await interaction.response.send_message("✅ Changed story successfully.", ephemeral=True)
-                return
-
-        await interaction.response.send_message(f"Something went wrong...", ephemeral=True)
-
 class OneWordStoryCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.last_author_id = None
+        self.word_count = 0
+        self.story_ended = False
+        self.story_message = None
+        self.story_content = []
 
-    async def cog_load(bot):
+    async def cog_load(self):
         print("[OneWordStoryCog] Loaded!")
 
-    async def cog_unload(bot):
+    async def cog_unload(self):
         print("[OneWordStoryCog] Unloaded")
     
-    @commands.hybrid_command()
-    async def onewordstory_manage(self, ctx):
-        """
-        Edit the current One Word story
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        if message.channel.id != channel_onewordstory:
+            return
 
-        Parameters
-        ----------
-        ctx: commands.Context
-            The context of the command invocation
-        """
-        if not discord.utils.get(ctx.author.roles, id=role_onewordmanager):
-            await ctx.send("`This move can’t be used until you get the `<:pokebadge:1357731030441660517>` Bot Developer badge!`", delete_after=5)
-        elif ctx.channel.id != channel_onewordstory:
-            await ctx.send("`Oak's words echoed... There's a time and place for everything!`", delete_after=5)
+        if self.story_ended:
+            await message.delete()
+            return
+
+        # If the same user sends two words in a row -> delete
+        if message.author.id == self.last_author_id:
+            await message.delete()
+            return
+
+        # Only letters allowed, or "." to end
+        if not re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ]+|\.", message.content.strip()):
+            await message.delete()
+            return
+
+        word = message.content.strip()
+
+        # End of story
+        if word == ".":
+            if self.word_count < 50:
+                await message.delete()
+                return
+            else:
+                self.story_ended = True
+                full_story = " ".join(self.story_content)
+
+                log_channel = await self.bot.fetch_channel(channel_onewordstorylog)
+                if self.story_message:
+                    finished_embed = discord.Embed(
+                        title="📖 One Word Story Completed",
+                        description=full_story,
+                        color=discord.Color.blue()
+                    )
+                    await self.story_message.edit(embed=finished_embed)
+
+                # Send the final story in one word story channel
+                story_channel = await self.bot.fetch_channel(channel_onewordstory)
+                final_embed = discord.Embed(
+                    title="📖 One Word Story Finished",
+                    description=full_story,
+                    color=discord.Color.blue()
+                )
+                await story_channel.send(embed=final_embed)
+
+                # Restart a new story
+                self.last_author_id = None
+                self.word_count = 0
+                self.story_ended = False
+                self.story_message = None
+                self.story_content = []
+
+                return
+
+        # Accept word
+        self.word_count += 1
+        self.last_author_id = message.author.id
+        self.story_content.append(word)
+
+        log_channel = await self.bot.fetch_channel(channel_onewordstorylog)
+
+        embed = discord.Embed(
+            title="📖 One Word Story in progress",
+            description=" ".join(self.story_content),
+            color=discord.Color.blue()
+        )
+
+        if self.story_message is None:
+            self.story_message = await log_channel.send(embed=embed)
         else:
-            channel = await self.bot.fetch_channel(channel_onewordstorylog)
-            async for message in channel.history(limit=1):
-                if message.author == bot.user:
-                    modal = OneWordStoryEditModal(default_name=name, default_feedback=message.content)
-                    await interaction.response.send_modal(modal)
-                    return
+            await self.story_message.edit(embed=embed)
 
-            await ctx.send(f"Something went wrong, couldn't find current story!", ephemeral=True)
-            
+    #@commands.hybrid_command()
+    #async def onewordstory_reset(self, ctx):
+    #    """
+    #   Reset the One Word Story
+    #
+    #    Parameters
+    #    ----------
+    #    ctx: commands.Context
+    #        The context of the command invocation
+    #    """
+    #    if not discord.utils.get(ctx.author.roles, id=role_onewordmanager):
+    #        return await ctx.send("🚫 You don't have permission!", delete_after=5)
+    #
+    #    self.last_author_id = None
+    #    self.word_count = 0
+    #    self.story_ended = False
+    #    self.story_message = None
+    #    self.story_content = []
+    #
+    #    await ctx.send("✅ One Word Story has been reset!", delete_after=5)
 
 async def setup(bot):
     await bot.add_cog(OneWordStoryCog(bot))
