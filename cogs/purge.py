@@ -21,10 +21,10 @@ class PurgeConfirmView(discord.ui.View):
         try:
             deleted = await self.ctx.channel.purge(limit=self.amount + 1)
 
-            countdown_msg = await self.ctx.send("This message will be deleted in 10s ⏱")
-            for remaining in range(10, 0, -1):
-                await countdown_msg.edit(content=f"This message will be deleted in {remaining}s ⏱")
+            countdown_msg = await self.ctx.send(f"Deleted {len(deleted)-1} messages\n-# This message will be deleted in 5s ⏱")
+            for remaining in range(4, 0, -1):
                 await asyncio.sleep(1)
+                await countdown_msg.edit(content=f"Deleted {len(deleted)-1} messages\n-# This message will be deleted in {remaining}s ⏱")
             await countdown_msg.delete()
 
             self.response = True
@@ -35,7 +35,7 @@ class PurgeConfirmView(discord.ui.View):
                     pass
             self.stop()
         except discord.errors.Forbidden:
-            await self.ctx.send("Whoops, I don't have permissions to do that.", delete_after=10)
+            await self.ctx.send("Whoops, I don't have permissions to do that.", delete_after=5)
 
     @discord.ui.button(label="No", style=discord.ButtonStyle.secondary)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
