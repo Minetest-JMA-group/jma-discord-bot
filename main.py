@@ -59,7 +59,10 @@ async def reload(ctx: commands.Context):
         for c in cogs:
             await bot.reload_extension(c)
             total = total + 1
-        await ctx.send(f"Reloaded {total} extensions")
+        embed = discord.Embed(title=f"Reloaded `{total}` extensions",
+        colour=discord.Color.blue())
+
+        await ctx.send(embed=embed, delete_after=5)
 
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError):
