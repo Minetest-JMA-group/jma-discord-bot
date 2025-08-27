@@ -29,7 +29,10 @@ class DebugCog(commands.Cog):
             The context of the command invocation
         """
         if not discord.utils.get(ctx.author.roles, id=role_botmanager):
-            await ctx.send("You're not allowed to use debug commands!\nIn fact, I'll give you even more bugs now :bug::bug::bug:", delete_after=5)
+            embed = discord.Embed(description="**You're not allowed to use debug commands!**\nIn fact, I'll give you even more bugs now :bug::bug::bug:",
+            colour=discord.Color.red())
+
+            await ctx.send(embed=embed, delete_after=5)
         else:
             roles = ctx.guild.roles  # Get all roles in the server
             role_list = "\n".join([f"{role.name} - `{role.id}`" for role in roles])  # Format the roles
