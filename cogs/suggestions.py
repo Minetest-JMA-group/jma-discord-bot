@@ -29,7 +29,10 @@ class EditThreadNameModal(discord.ui.Modal, title="Rename thread"):
         msg = await interaction.channel.fetch_message(self.message_id)
         await msg.delete()
 
-        await interaction.response.send_message("Thread renamed, thanks for your help!", ephemeral=True)
+        embed = discord.Embed(description="**Thread renamed, thanks for your help !**",
+        colour=discord.Color.green())
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class EditThreadNameView(discord.ui.View):
@@ -66,10 +69,13 @@ class SuggestionsCog(commands.Cog):
 
             thread = await message.create_thread(name=f"Suggestion by {message.author.display_name}")
 
-
             view = EditThreadNameView(self.bot, message.author)
 
-            msg = await thread.send(f"{message.author.mention} Please rename the thread!", view=view)
+            embed = discord.Embed(description=f"**{message.author.mention} Please rename the thread !**",
+            colour=discord.Color.blue())
+
+            msg = await thread.send(embed=embed, view=view)
+            
             view.message_id = msg.id
 
 
