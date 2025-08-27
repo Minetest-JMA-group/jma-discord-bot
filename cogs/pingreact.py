@@ -36,7 +36,7 @@ class PingReactCog(commands.Cog):
     @commands.hybrid_command()
     async def list_ping_reactions(self, ctx):
         """
-        Lists all the different ping reactions
+        Lists all the different ping reactions.
 
         Parameters
         ----------
@@ -48,7 +48,10 @@ class PingReactCog(commands.Cog):
         for phrase in phrases:
             prompts = prompts + phrase + ", "
         
-        await ctx.send(f"Here are all the prompts I'll respond to: {prompts}")
+        embed = discord.Embed(description=f"Here are all the prompts I'll respond to: **{prompts}**",
+        colour=discord.Color.blue())
+
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(PingReactCog(bot))
