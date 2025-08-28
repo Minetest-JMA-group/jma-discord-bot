@@ -18,6 +18,7 @@ class OneWordStoryCog(commands.Cog):
         self.story_ended = False
         self.story_message = None
         self.story_content = []
+        self.approved_message_ids = set()
 
     async def cog_load(self):
         print("[OneWordStoryCog] Loaded!")
@@ -88,6 +89,7 @@ class OneWordStoryCog(commands.Cog):
         self.word_count += 1
         self.last_author_id = message.author.id
         self.story_content.append(word)
+        self.approved_message_ids.add(message.id)
 
         log_channel = await self.bot.fetch_channel(channel_onewordstorylog)
 
@@ -122,6 +124,24 @@ class OneWordStoryCog(commands.Cog):
     #    self.story_content = []
     #
     #    await ctx.send("✅ One Word Story has been reset!", delete_after=5)
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message: discord.Message):
+        if message.author.bot:
+            return
+        if message.channel.id != channel_onewordstory:
+            return
+
+        if message.id not in self.approved_message_ids:
+            return
+
+        word = message.content.strip()
+        if not re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ]+|\.", word):
+            return
+        if word == "." and self.word_count < 50:
+            return
+
+        await message.channel.send(f"{message.author.mention} : {word}")
 
 async def setup(bot):
     await bot.add_cog(OneWordStoryCog(bot))
