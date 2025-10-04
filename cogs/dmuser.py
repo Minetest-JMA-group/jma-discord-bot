@@ -1,13 +1,9 @@
 import discord
 from discord.ext import commands
+import sqlite3
 
 import os
 from dotenv import load_dotenv
-
-load_dotenv()
-
-role_botmail = int(os.getenv("role_botmail"))
-role_botmanager = int(os.getenv("role_botmanager"))
 
 class DmUserCog(commands.Cog):
     def __init__(self, bot):
@@ -23,7 +19,7 @@ class DmUserCog(commands.Cog):
     @commands.hybrid_command()
     async def dm_user(self, ctx: commands.Context, user: discord.User, message: str):
         """
-        Sends a DM to a user
+        Sends a DM to a user.
 
         Parameters
         ----------
@@ -35,16 +31,18 @@ class DmUserCog(commands.Cog):
             The message to send
         """
 
-        # List of role IDs to check
-        allowed_roles = [role_botmail, role_botmanager]
+        if not ctx.author.guild_permissions.moderate_members:
+            embed = discord.Embed(description="Nope! You don't have the roles to use this command.",
+            colour=discord.Color.red())
 
-        # Check if the user has at least one of the roles
-        has_role = any(role.id in allowed_roles for role in ctx.author.roles)
-
-        if not has_role:
-            await ctx.send("Nope! You don't have the roles to use this command.", delete_after=5)
+            await ctx.send(embed=embed, delete_after=5)
+            return
         elif (not user.id) or (not message):
-            await ctx.send("I didn't recieve the user or message correctly. Try using the slash command.", delete_after=5)
+            embed = discord.Embed(description="I didn't recieve the user or message correctly. Try using the slash command.",
+            colour=discord.Color.yellow())
+
+            await ctx.send(embed=embed, delete_after=5)
+            return
         else:
             status = discord.Embed(
                 title="Sending DM...",
@@ -55,7 +53,7 @@ class DmUserCog(commands.Cog):
 
             dmembed = discord.Embed(
                 description=f"{message}",
-                color=discord.Color.from_str("#0f2464")
+                color=discord.Color.blue()
             )
             dmembed.set_footer(text="Do not reply, we don't read messages sent to the bot! To contact, please open a ticket in our Discord server.")
             #dmembed.set_author(name="JMA Gaming")
