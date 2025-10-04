@@ -26,6 +26,9 @@ Based on a bot made by Loki and Bertram, rewritten in Python by fancyfinn9
 ### DMUserCog
 - Send DMs to a user (command)
 
+### EnvEditCog
+- Admins and Bot Manager can edit values of .env  (command)
+
 ### OneWordStoryCog
 - WIP: Add all eligible messages in specified channel to the current story
 - Edit the current story (command)
