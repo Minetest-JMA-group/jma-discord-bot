@@ -26,8 +26,6 @@ channel_suggestions = int(get_variable_value("Suggestions channel"))
 channel_suggestions_archive = int(get_variable_value("Suggestions archive channel"))
 developer_role = int(get_variable_value("Developer role"))
 
-role_Manage_Threads = int(os.getenv("role_Manage_Threads"))
-
 # --- MODAL ---
 class EditThreadNameModal(discord.ui.Modal, title="Rename thread"):
     def __init__(self, message_to_delete, suggestion_message, suggestion_author):
@@ -47,74 +45,81 @@ class EditThreadNameModal(discord.ui.Modal, title="Rename thread"):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.channel.edit(name=self.changename.value)
+        #try:
+        #    await self.message_to_delete.delete()
+        #except:
+        #    pass
+        await interaction.response.send_message(":white_check_mark: Thread renamed.", ephemeral=True)
 
-        try:
-            await self.message_to_delete.delete()
-        except:
-            pass
-
-        embed = discord.Embed(description="**:white_check_mark: Thread renamed**",
-                              colour=discord.Color.green())
-
-        view = FullButtonsView(interaction.client, self.suggestion_author, self.suggestion_message)
-        await interaction.response.send_message(embed=embed, view=view)
 
 # --- VIEWS ---
 class RenameOnlyView(discord.ui.View):
-    def __init__(self, bot, user: discord.User, suggestion_message: discord.Message):
+    def __init__(self, bot, suggestion_message: discord.Message):
         super().__init__(timeout=None)
         self.bot = bot
-        self.user = user
         self.suggestion_message = suggestion_message
+        self.already_renamed = False
 
-    @discord.ui.button(label="Change Threadname", custom_id="change_thread_name_initial", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="Change Thread Name", style=discord.ButtonStyle.primary, custom_id="change_thread_name")
     async def rename_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if (interaction.user.id == self.user.id) or (role_Manage_Threads in [r.id for r in interaction.user.roles]):
-            modal = EditThreadNameModal(interaction.message, self.suggestion_message, self.user)
+        if self.already_renamed:
+            await interaction.response.send_message("This suggestion has already been renamed.", ephemeral=True)
+            return
+
+        if interaction.user.guild_permissions.manage_threads or interaction.user.guild_permissions.administrator:
+            modal = EditThreadNameModal(interaction.message, self.suggestion_message, interaction.user)
+            self.already_renamed = True
+            button.disabled = True
             await interaction.response.send_modal(modal)
+
+            try:
+                await interaction.followup.edit_message(interaction.message.id, view=self)
+            except:
+                pass
         else:
-            embed = discord.Embed(description="**You don’t have permission to rename this thread.**",
-                                  colour=discord.Color.red())
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message("You don’t have permission to rename this thread.", ephemeral=True)
+
 
 class FullButtonsView(discord.ui.View):
-    def __init__(self, bot, user: discord.User, suggestion_message: discord.Message):
+    def __init__(self, bot, suggestion_message: discord.Message):
         super().__init__(timeout=None)
         self.bot = bot
-        self.user = user
         self.suggestion_message = suggestion_message
+        self.already_renamed = False
 
-    @discord.ui.button(label="Change Threadname", custom_id="change_thread_name_full", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="Change Threadname", style=discord.ButtonStyle.primary, custom_id="change_thread_name")
     async def rename_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if (role_Manage_Threads in [r.id for r in interaction.user.roles]):
-            modal = EditThreadNameModal(interaction.message, self.suggestion_message, self.user)
-            await interaction.response.send_modal(modal)
-        else:
-            embed = discord.Embed(
-                description="**You don’t have permission to rename this thread.**",
-                colour=discord.Color.red()
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+        if self.already_renamed:
+            await interaction.response.send_message("This suggestion has already been renamed.", ephemeral=True)
+            return
 
-    @discord.ui.button(label="Mark as noted", custom_id="mark_noted", style=discord.ButtonStyle.secondary)
+        if interaction.user.guild_permissions.manage_threads or interaction.user.guild_permissions.administrator:
+            modal = EditThreadNameModal(interaction.message, self.suggestion_message, interaction.user)
+            self.already_renamed = True
+            button.disabled = True
+            await interaction.response.send_modal(modal)
+            try:
+                await interaction.followup.edit_message(interaction.message.id, view=self)
+            except:
+                pass
+        else:
+            await interaction.response.send_message("You don’t have permission to rename this thread.", ephemeral=True)
+
+    @discord.ui.button(label="Mark as noted", style=discord.ButtonStyle.secondary, custom_id="mark_noted")
     async def mark_noted(self, interaction: discord.Interaction, button: discord.ui.Button):
-        #developer_role = get_developer_role()
-        if interaction.user.guild_permissions.administrator or (developer_role and developer_role in [r.id for r in interaction.user.roles]):
+        if interaction.user.guild_permissions.administrator or (developer_role in [r.id for r in interaction.user.roles]):
             await self.suggestion_message.clear_reactions()
             await self.suggestion_message.add_reaction("⏳")
             button.disabled = True
             await interaction.response.edit_message(view=self)
-            embed = discord.Embed(description="**Suggestion marked as noted.**", colour=discord.Color.yellow())
             await interaction.channel.edit(name=f"Noted - {interaction.channel.name}")
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.followup.send("Suggestion marked as noted.", ephemeral=True)
         else:
-            embed = discord.Embed(description="**You don’t have permission to mark as noted.**", colour=discord.Color.red())
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message("You don’t have permission to mark as noted.", ephemeral=True)
 
-    @discord.ui.button(label="Mark as approved/done", custom_id="mark_approved", style=discord.ButtonStyle.success)
+    @discord.ui.button(label="Mark as approved/done", style=discord.ButtonStyle.success, custom_id="mark_approved")
     async def mark_approved(self, interaction: discord.Interaction, button: discord.ui.Button):
-        #developer_role = get_developer_role()
-        if interaction.user.guild_permissions.administrator or (developer_role and developer_role in [r.id for r in interaction.user.roles]):
+        if interaction.user.guild_permissions.administrator or (developer_role in [r.id for r in interaction.user.roles]):
             await self.suggestion_message.clear_reactions()
             await self.suggestion_message.add_reaction("✅")
             button.disabled = True
@@ -123,54 +128,19 @@ class FullButtonsView(discord.ui.View):
             old_name = interaction.channel.name
             clean_name = old_name.removeprefix("Noted - ")
             await interaction.channel.edit(name=f"Fixed - {clean_name}")
+            await interaction.followup.send("Suggestion marked as approved/done.", ephemeral=True)
 
-            embed = discord.Embed(description="**Suggestion marked as approved/done.**", colour=discord.Color.green())
-            await interaction.followup.send(embed=embed, ephemeral=True)
-
-            # --- ARCHIVE ---
             if isinstance(interaction.channel, discord.Thread):
                 await interaction.channel.edit(archived=True)
-
                 archive_channel = interaction.guild.get_channel(channel_suggestions_archive)
                 thread_link = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}"
                 if archive_channel:
-                    archive_embed = discord.Embed(
-                        description=f"**Thread '{interaction.channel.name}' has been marked as approved/done and archived.**\nYou can access here: {thread_link}",
-                        colour=discord.Color.green()
+                    await archive_channel.send(
+                        f"Thread **{interaction.channel.name}** has been marked as approved/done and archived.\nYou can access it here: {thread_link}"
                     )
-                    await archive_channel.send(embed=archive_embed)
         else:
-            embed = discord.Embed(description="**You don’t have permission to mark as approved/done.**", colour=discord.Color.red())
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message("You don’t have permission to mark as approved/done.", ephemeral=True)
 
-"""    @discord.ui.button(label="Mark as approved/done", custom_id="mark_approved", style=discord.ButtonStyle.success)
-    async def mark_approved(self, interaction: discord.Interaction, button: discord.ui.Button):
-        developer_role = get_developer_role()
-        if interaction.user.guild_permissions.administrator or (developer_role and developer_role in [r.id for r in interaction.user.roles]):
-            await self.suggestion_message.clear_reactions()
-            await self.suggestion_message.add_reaction("✅")
-            button.disabled = True
-            await interaction.response.edit_message(view=self)
-
-            # --- ARCHIVE ---
-            if isinstance(interaction.channel, discord.Thread):
-                new_name = f"Fixed - {interaction.channel.name}"
-                await interaction.channel.edit(name=new_name, archived=True)
-
-                archive_channel = interaction.guild.get_channel(channel_suggestions_archive)
-                thread_link = f"https://discord.com/channels/{interaction.guild.id}/{interaction.channel.id}"
-                if archive_channel:
-                    archive_embed = discord.Embed(
-                        description=f"**Thread '{new_name}' has been marked as approved/done and archived.**\nYou can access it here: {thread_link}",
-                        colour=discord.Color.green()
-                    )
-                    await archive_channel.send(embed=archive_embed)
-
-            embed = discord.Embed(description="**Suggestion marked as approved/done and archived.**", colour=discord.Color.green())
-            await interaction.followup.send(embed=embed, ephemeral=True)
-        else:
-            embed = discord.Embed(description="**You don’t have permission to mark as approved/done.**", colour=discord.Color.red())
-            await interaction.response.send_message(embed=embed, ephemeral=True)"""
     
 # --- COG ---
 class SuggestionsCog(commands.Cog):
@@ -184,48 +154,27 @@ class SuggestionsCog(commands.Cog):
         print("[SuggestionsCog] Unloaded")
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        if message.channel.id == channel_suggestions:
-            await message.add_reaction("👍")
-            await message.add_reaction("👎")
-            if message.thread is None:
-                thread = await message.create_thread(name=f"Suggestion by {message.author.display_name}")
-            else:
-                thread = message.thread
-            #embed = discord.Embed(description=f"**{message.author.mention} Please rename the thread !**", colour=discord.Color.blue())
-            expire_timestamp = int(time.time()) + 600
-            embed = discord.Embed(
-                description=f"**{message.author.mention} The suggestion and the thread will be deleted <t:{expire_timestamp}:R> if you don't rename the thread.**",
-                colour=discord.Color.blue()
-            )
 
-            view = RenameOnlyView(self.bot, message.author, message)
-            await thread.send(embed=embed, view=view)
-            
-            asyncio.create_task(self.check_rename_timeout(thread, message))
-        
-    async def check_rename_timeout(self, thread: discord.Thread, suggestion_message: discord.Message):
-        await asyncio.sleep(600)
+        if isinstance(message.channel, discord.Thread) and isinstance(message.channel.parent, discord.ForumChannel):
+            if message.channel.parent.id != channel_suggestions:
+                return
 
-        try:
-            updated_thread = await thread.guild.fetch_channel(thread.id)
-        except discord.NotFound:
-            return
+            if message.id == message.channel.id
+                try:
+                    await message.add_reaction("👍")
+                    await message.add_reaction("👎")
+                except:
+                    pass
 
-        if not updated_thread.name.startswith("Suggestion by"):
-            return
-
-        try:
-            await updated_thread.delete()
-        except:
-            pass
-
-        try:
-            await suggestion_message.delete()
-        except:
-            pass
+                msg_text = (
+                    f"{message.author.mention}, this is your suggestion.\n"
+                    f"Admins can rename or mark it using the buttons below."
+                )
+                view = FullButtonsView(self.bot, message)
+                await message.channel.send(msg_text, view=view)
 
 async def setup(bot):
     await bot.add_cog(SuggestionsCog(bot))
