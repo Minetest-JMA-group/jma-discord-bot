@@ -1,12 +1,26 @@
 import discord
 from discord.ext import commands
+import sqlite3
 
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
+def get_variable_value(title):
+    conn = sqlite3.connect('variables.db')
+    cursor = conn.cursor()
 
-role_botmanager = int(os.getenv("role_botmanager"))
+    cursor.execute("SELECT value FROM variables WHERE title = ?", (title,))
+    result = cursor.fetchone()
+
+    conn.close()
+
+    if result:
+        return result[0]
+    else:
+        raise KeyError(f"Variable '{title}' not found in the database.")
+
+
+def get_role_botmanager():
+    return int(get_variable_value("Bot manager role"))
+
 
 class DebugCog(commands.Cog):
     def __init__(self, bot):
@@ -28,11 +42,17 @@ class DebugCog(commands.Cog):
         ctx: commands.Context
             The context of the command invocation
         """
+        role_botmanager = get_role_botmanager()
+
         if not discord.utils.get(ctx.author.roles, id=role_botmanager):
-            await ctx.send("You're not allowed to use debug commands!\nIn fact, I'll give you even more bugs now :bug::bug::bug:", delete_after=5)
+            embed = discord.Embed(description="**You're not allowed to use debug commands!**\nIn fact, I'll give you even more bugs now :bug::bug::bug:",
+            colour=discord.Color.red())
+
+            await ctx.send(embed=embed, delete_after=5)
+            return
         else:
-            roles = ctx.guild.roles  # Get all roles in the server
-            role_list = "\n".join([f"{role.name} - `{role.id}`" for role in roles])  # Format the roles
+            roles = ctx.guild.roles
+            role_list = "\n".join([f"{role.name} - `{role.id}`" for role in roles])
 
             embed = discord.Embed(title="Server Roles", description=role_list, color=discord.Color.blue())
             await ctx.send(embed=embed)

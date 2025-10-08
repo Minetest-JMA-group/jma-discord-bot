@@ -1,0 +1,10 @@
+TOKEN=
+
+server_sync=
+
+role_status_ctf=
+role_status_mcl=
+role_status_creative=
+role_status_voxelcraft=
+
+channel_serverstatus=

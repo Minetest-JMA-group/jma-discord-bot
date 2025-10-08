@@ -18,14 +18,15 @@ tree = bot.tree
 
 cogs = [
     "cogs.debug",
-#    "cogs.purge",
-#    "cogs.serverstatus",
-#    "cogs.dmuser",
-#    "cogs.onewordstory",
+    "cogs.purge",
+    "cogs.serverstatus",
+    "cogs.dmuser",
+    "cogs.onewordstory",
     "cogs.status",
     "cogs.pingreact",
     "cogs.suggestions",
     "cogs.envedit",
+    "cogs.admin-variables",
 ]
 
 """@bot.hybrid_command()

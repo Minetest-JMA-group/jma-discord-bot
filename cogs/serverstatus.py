@@ -1,13 +1,27 @@
 import discord
 from discord.ext import commands
-
 import os
 from dotenv import load_dotenv
+import sqlite3
 
 load_dotenv()
 
-role_developer = int(os.getenv("role_developer"))
-role_botmanager = int(os.getenv("role_botmanager"))
+def get_variable_value(title):
+    conn = sqlite3.connect('variables.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT value FROM variables WHERE title = ?", (title,))
+    result = cursor.fetchone()
+
+    conn.close()
+
+    if result:
+        return result[0]
+    else:
+        raise KeyError(f"Variable '{title}' not found in the database.")
+
+role_developer = int(get_variable_value("Developer role"))
+role_botmanager = int(get_variable_value("Bot manager role"))
 
 role_status_ctf = int(os.getenv("role_status_ctf"))
 role_status_mcl = int(os.getenv("role_status_mcl"))
@@ -53,22 +67,73 @@ class ServerChangeView(discord.ui.View):
         }
         state = states[interaction.data["custom_id"]]
         has_role = any(role.id == role_developer for role in interaction.user.roles)
-        # We keep the check here just in case
         if has_role:
             role = interaction.guild.get_role(self.role_id)
-
             if not role:
-                await interaction.response.send_message(f"Hmm... role ID {self.role_id} wasn't found in this server", ephemeral=True)
+                embed = discord.Embed(description=f"**Hmm... role ID {self.role_id} wasn't found in this server**",
+                colour=discord.Color.red())
+
+                await interaction.response.send_message(embed=embed, ephemeral=True)
             else:
                 await role.edit(name=f"{state} {self.server_name}")
-                
+
+                channel = interaction.guild.get_channel(channel_serverstatus)
+                async for message in channel.history(limit=50):
+                    if message.author == self.bot.user and message.embeds:
+                        embed = message.embeds[0]
+                        new_desc = f"""
+**<:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668>**
+
+**jma Minetest server status:**
+
+> 🕑 = status will update soon  
+> 🟥 = offline  
+> 🟩 = online  
+> 🚧 = Server maintenance  
+> 🔐 = Whitelisted players only  
+
+- <@&{role_status_ctf}>  
+> adress: `jmaminetest.mooo.com`  
+> port: `30001`  
+
+- <@&{role_status_mcl}>  
+> adress: `jmaminetest.mooo.com`  
+> port: `30002`  
+
+- <@&{role_status_voxelcraft}>  
+> adress: `not public`  
+> port: `not public`  
+
+- <@&{role_status_creative}>  
+> adress: `jmaminetest.mooo.com`  
+> port: `30003`  
+
+Server offline?  
+Please select the ping role to get notified when the server starts again  
+🔽                                                                                                                          🔽  
+
+**This is not a live status.**  
+**<:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668>**
+    """
+                        new_embed = discord.Embed(
+                            description=new_desc,
+                            color=discord.Color.blue(),
+                            timestamp=discord.utils.utcnow()
+                        )
+                        new_embed.set_footer(text="View updated > ")
+                        await message.edit(embed=new_embed, view=ServerStatusView(self.bot))
+                        break
+
                 if state == "🟩":
                     channel = await self.bot.fetch_channel(channel_serverstatus)
                     await channel.send(f"<@&{self.role_id}> is 🟩 online", delete_after=1)
-                
+
                 await interaction.response.send_message(f'Updated server status.\n{state} **{self.server_name}**', ephemeral=True)
         else:
-            await interaction.response.send_message('Nice try, but Developer role is required', ephemeral=True)
+            embed = discord.Embed(description="**Nice try, but Developer role is required**",
+            colour=discord.Color.red())
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 class ServerSelectView(discord.ui.View):
     def __init__(self, bot):
@@ -93,7 +158,6 @@ class ServerSelectView(discord.ui.View):
 
     async def handle_button_click(self, interaction: discord.Interaction, button_id: str):
         has_role = any(role.id == role_developer for role in interaction.user.roles)
-        # We keep the check here just in case
         if has_role:
             data = {"servername": "Unavailable", "roleid": 0}
             if button_id == "ctf": data = {"servername": "JMA CTF", "roleid": role_status_ctf}
@@ -103,12 +167,16 @@ class ServerSelectView(discord.ui.View):
             embed = discord.Embed(
                 title = data["servername"],
                 description = f"You're modifying <@&{data['roleid']}>",
-                color = discord.Color.yellow()
+                color = discord.Color.blue()
             )
             view = ServerChangeView(self.bot, data)
             await interaction.response.send_message('', embed=embed, view=view, ephemeral=True)
         else:
-            await interaction.response.send_message('Nice try, but Developer role is required', ephemeral=True)
+            embed = discord.Embed(description="**Nice try, but Developer role is required**",
+            colour=discord.Color.red())
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 class ServerStatusView(discord.ui.View):
     def __init__(self, bot):
@@ -118,54 +186,84 @@ class ServerStatusView(discord.ui.View):
     @discord.ui.button(label='Change status', style=discord.ButtonStyle.blurple, custom_id='serverstatus_view:change_status')
     async def change_status(self, interaction: discord.Interaction, button: discord.ui.Button):
         has_role = any(role.id == role_developer for role in interaction.user.roles)
-        
         if has_role:
             view = ServerSelectView(self.bot)
-            await interaction.response.send_message('Select server:', view=view, ephemeral=True)
+            embed = discord.Embed(description="**Select server:**",
+            colour=discord.Color.blue())
+
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         else:
-            await interaction.response.send_message('Nice try, but Developer role is required', ephemeral=True)
+            embed = discord.Embed(description="**Nice try, but Developer role is required**",
+            colour=discord.Color.red())
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 class ServerStatusCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def cog_load(bot):
+    async def cog_load(self):
         print("[ServerStatusCog] Loaded!")
 
-    async def cog_unload(bot):
+    async def cog_unload(self):
         print("[ServerStatusCog] Unloaded")
 
-    
     @commands.hybrid_command()
     async def server_status_menu(self, ctx: commands.Context):
         """
-        Sends a server status menu to the channel.
-
-        Parameters
-        ----------
-        ctx: commands.Context
-            The context of the command invocation
+        Shows the servers status menu.
         """
-        has_role = any(role.id == role_botmanager for role in interaction.user.roles)
+        has_role = any(role.id == role_botmanager for role in ctx.author.roles)
         if not has_role:
-            await ctx.send("Hey, you don't have permissions to do that!", delete_after=5)
+            embed = discord.Embed(description="Hey, you don't have permissions to do that !",
+            colour=discord.Color.red())
+
+            await ctx.send(embed=embed, delete_after=5)
             return
 
         embed = discord.Embed(
-            description=f"""- <@&{role_status_ctf}>
-- <@&{role_status_mcl}>
-- <@&{role_status_creative}>
-- <@&{role_status_voxelcraft}>
-----------
-Update status ⏬ <@&{role_developer}> are permitted""",
+            description=f"""
+**<:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668>**
+
+**jma Minetest server status:**
+
+> 🕑 = status will update soon  
+> 🟥 = offline  
+> 🟩 = online  
+> 🚧 = Server maintenance  
+> 🔐 = Whitelisted players only  
+
+- <@&{role_status_ctf}>  
+> adress: `jmaminetest.mooo.com`  
+> port: `30001`  
+
+- <@&{role_status_mcl}>  
+> adress: `jmaminetest.mooo.com`  
+> port: `30002`  
+
+- <@&{role_status_voxelcraft}>  
+> adress: `not public`  
+> port: `not public`  
+
+- <@&{role_status_creative}>  
+> adress: `jmaminetest.mooo.com`  
+> port: `30003`  
+
+Server offline?  
+Please select the ping role to get notified when the server starts again  
+🔽                                                                                                                          🔽  
+
+**This is not a live status.**  
+**<:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668> <:jma_s:1139374131159236668>**
+""",
+            color=discord.Color.blue(),
             timestamp=discord.utils.utcnow()
         )
         embed.set_footer(text="View updated > ")
 
         view = ServerStatusView(self.bot)
-        await ctx.send("", embed=embed, view=view)
+        await ctx.send(embed=embed, view=view)
 
 async def setup(bot):
     await bot.add_cog(ServerStatusCog(bot))
-
     bot.add_view(ServerStatusView(bot))
