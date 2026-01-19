@@ -34,7 +34,7 @@ class DebugCog(commands.Cog):
             roles = ctx.guild.roles  # Get all roles in the server
             role_list = "\n".join([f"{role.name} - `{role.id}`" for role in roles])  # Format the roles
 
-            embed = discord.Embed(title="Server Roles", description=role_list, color=discord.Color.blue())
+            embed = discord.Embed(title="Server Roles", description=role_list[:4095], color=discord.Color.blue())
             await ctx.send(embed=embed)
 
 
