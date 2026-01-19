@@ -146,7 +146,7 @@ class ServerStatusCog(commands.Cog):
         ctx: commands.Context
             The context of the command invocation
         """
-        has_role = any(role.id == role_botmanager for role in interaction.user.roles)
+        has_role = any(role.id == role_botmanager for role in ctx.author.roles)
         if not has_role:
             await ctx.send("Hey, you don't have permissions to do that!", delete_after=5)
             return
