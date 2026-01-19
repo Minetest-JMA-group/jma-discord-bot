@@ -99,6 +99,8 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
         error_data = "".join(traceback.format_exception(type(error), error, error.__traceback__))
         description = f"Unknown error\n```py\n{error_data[:4000]}\n```"
 
+    print(error)
+
     embed = discord.Embed(
         title=f"Error in command {ctx.command}!",
         description=description,
