@@ -24,7 +24,7 @@ cogs = [
 #    "cogs.onewordstory",
     "cogs.status",
     "cogs.pingreact",
-    "cogs.suggestions",
+#    "cogs.suggestions",
     "cogs.envedit",
 ]
 
@@ -97,7 +97,7 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
         description = f"Missing required argument: `{error.param.name}`"
     else:
         error_data = "".join(traceback.format_exception(type(error), error, error.__traceback__))
-        description = f"Unknown error\n```py\n{error_data[:1000]}\n```"
+        description = f"Unknown error\n```py\n{error_data[:4000]}\n```"
 
     embed = discord.Embed(
         title=f"Error in command {ctx.command}!",
