@@ -117,10 +117,8 @@ async def setup_hook() -> None:
 async def on_ready() -> None:
     print(f"Logged in as {bot.user}")
 
-    guild = discord.Object(id=server_sync)
-    tree.copy_global_to(guild=guild)
-    synced = await tree.sync(guild=guild)
-
+    synced = await tree.sync()
+    
     await bot.change_presence(activity=discord.Game(name="JMA Capture the Flag"))
 
 bot.run(TOKEN)
