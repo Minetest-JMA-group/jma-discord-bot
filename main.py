@@ -22,6 +22,7 @@ cogs = [
     "cogs.status",
     "cogs.pingreact",
     "cogs.envedit",
+    "cogs.mtid"
 ]
 
 """@bot.hybrid_command()
